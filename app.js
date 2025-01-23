@@ -26,12 +26,14 @@ app.use(
 );
 
 // Ruta principal
-app.get('/', (request, response) => {
+app.get('/Welcome', (request, response) => {
   return response.status(200).json({
     message: "Bienvenido al API de control de sesiones",
     autor: "Antonio O. Dolores"
+
   });
 });
+
 
 
 const getLocalIp = () => {
@@ -49,7 +51,7 @@ const getLocalIp = () => {
 };
 
 // Ruta de login
-app.post('/login', (req, res) => {
+app.post('/login', (request, response) => {
   const { email, nickname, macAdress } = request.body;
   if (!email || !nickname || !macAdress) {
     return response.status(400).json({ message: "Se esperan campos requeridos" });
@@ -69,22 +71,26 @@ app.post('/login', (req, res) => {
   return response.status(200).json({ message: "Sesión iniciada correctamente", sessionId });
 });
 
-app.post('/logout', (request, response) => {
-    const { sessionId } = request.body;
-    
-    if (!sessionId || !session[sessionId]) {
-      return response.status(404).json({ message: "No se ha encontrado una sesión activa" });
+
+app.post('/logout', (req, res) => {
+  const { sessionId } = req.body;
+
+  // Verifica si la sesión existe
+  if (!sessionId || !req.session[sessionId]) {
+    return res.status(404).json({ message: "No se ha encontrado una sesión activa" });
+  }
+
+  delete req.session[sessionId];
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).send('Error al cerrar la sesión');
     }
-  
-    delete session[sessionId];
-    request.session.destroy((err) => {
-      if (err) {
-        return response.status(500).send('Error al cerrar la sesión');
-      }
-  
-      response.status(200).json({ message: "Logout exitoso" });
-    });
+    res.status(200).json({ message: "Logout exitoso" });
+  });
 });
+
+
+
 
 app.post('/update', (request, response)=>{
     const {sessionId, email, nickname} = request.body;
@@ -92,11 +98,12 @@ app.post('/update', (request, response)=>{
     if (!sessionId || !session[sessionId]){
         return response.status(404).json({message: "No existe una sesion activa"})
     }
-    if(email) session[sessionId].email=email;
-    if (nickname)session[sessionId].nickname = nickname;
-    IdleDeadline()
-    session[sessionId].lastAccessed = newData();
+    session[!sessionId].lastAccessed = new Date();
+    res.send({message:'User updated successfully.', sesions:req.sesion.user});
 });
+
+
+
 
 
 app.get("/status", (request, response)=>{
